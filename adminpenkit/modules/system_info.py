@@ -1,7 +1,7 @@
 import platform
 import psutil
 import socket
-from modules.base_module import BaseModule
+from adminpenkit.modules.base_module import BaseModule
 
 class SystemInfoModule(BaseModule):
     def __init__(self):

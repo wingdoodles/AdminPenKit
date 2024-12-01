@@ -1,7 +1,7 @@
 import nmap
 import socket
 import threading
-from modules.base_module import BaseModule
+from adminpenkit.modules.base_module import BaseModule
 
 class NetworkScanner(BaseModule):
     def __init__(self):
@@ -24,6 +24,7 @@ class NetworkScanner(BaseModule):
         return True
         
     def scan_network(self, target_ip="127.0.0.1", ports="1-1024"):
+        
         def scan_thread():
             try:
                 return self.scanner.scan(target_ip, ports, arguments='-T4')
@@ -34,8 +35,8 @@ class NetworkScanner(BaseModule):
         scan_thread = threading.Thread(target=scan_thread)
         scan_thread.daemon = True
         scan_thread.start()
-        return self.format_results()
-            
+
+        return self.format_results()            
     def format_results(self):
         results = []
         for host in self.scanner.all_hosts():
