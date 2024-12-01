@@ -2,11 +2,14 @@ import tkinter as tk
 from tkinter import ttk
 from utils.logger import Logger
 from utils.config import Config
+
 from gui.tool_frames import (
     SystemInfoFrame,
     NetworkScanFrame,
     ServiceManagerFrame,
-    SecurityCheckerFrame
+    SecurityCheckerFrame,
+    NetworkMonitorFrame
+    
 )
 
 class MainWindow:
@@ -106,14 +109,15 @@ class MainWindow:
         self.network_scan_frame = NetworkScanFrame(self.notebook)
         self.service_frame = ServiceManagerFrame(self.notebook)
         self.security_frame = SecurityCheckerFrame(self.notebook)
+        self.network_monitor_frame = NetworkMonitorFrame(self.notebook)
         
         self.notebook.add(self.sys_info_frame, text="System Info")
         self.notebook.add(self.network_scan_frame, text="Network Scanner")
         self.notebook.add(self.service_frame, text="Services")
         self.notebook.add(self.security_frame, text="Security")
+        self.notebook.add(self.network_monitor_frame, text="Network Monitor")
         
         self.notebook.select(0)
-
     def create_status_bar(self):
         self.status_bar = ttk.Frame(self.root)
         self.status_bar.grid(row=1, column=0, columnspan=2, sticky="ew")

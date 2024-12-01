@@ -1,4 +1,6 @@
 import os
+import time
+
 import tkinter as tk
 from tkinter import ttk, filedialog
 from matplotlib.figure import Figure
@@ -10,37 +12,150 @@ from modules.security_checker import SecurityChecker
 from modules.data_viz import DataVisualizer
 from modules.security_audit import SecurityAuditor
 from modules.reporting import ReportGenerator
-
+from modules.network_scanner import NetworkInterfaceMonitor
 
 
 class SystemInfoFrame(ttk.Frame):
     def __init__(self, master, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
         self.sys_info = SystemInfoModule()
+        self.monitoring_active = False
         self.create_widgets()
-        
-    def create_widgets(self):
-        # Create treeview for system information
-        self.tree = ttk.Treeview(self, columns=("Value",), show="tree headings")
-        self.tree.heading("Value", text="Value")
-        self.tree.pack(expand=True, fill="both", padx=5, pady=5)
-        
-        # Add refresh button
-        ttk.Button(self, text="Refresh", command=self.update_info).pack(pady=5)
-        
-        self.update_info()
-        
-    def update_info(self):
-        self.tree.delete(*self.tree.get_children())
-        info = self.sys_info.get_system_info()
-        for key, value in info.items():
-            if isinstance(value, dict):
-                parent = self.tree.insert("", "end", text=key)
-                for sub_key, sub_value in value.items():
-                    self.tree.insert(parent, "end", values=(f"{sub_key}: {sub_value}",))
-            else:
-                self.tree.insert("", "end", values=(f"{key}: {value}",))
+        self.notebook.bind('<<NotebookTabChanged>>', self.handle_tab_change)
 
+    def create_widgets(self):
+        # Create main notebook
+        self.notebook = ttk.Notebook(self)
+        self.notebook.pack(expand=True, fill="both", padx=5, pady=5)
+
+        # Hardware Info Tab
+        self.hw_frame = ttk.Frame(self.notebook)
+        self.create_hardware_view()
+        self.notebook.add(self.hw_frame, text="Hardware")
+
+        # Real-time Monitoring Tab
+        self.monitor_frame = ttk.Frame(self.notebook)
+        self.create_monitoring_widgets()
+        self.notebook.add(self.monitor_frame, text="Monitoring")
+
+        # Refresh button
+        ttk.Button(self, text="Refresh", command=self.update_info).pack(pady=5)
+
+
+    def create_hardware_view(self):
+        self.hw_tree = ttk.Treeview(self.hw_frame, columns=('Property', 'Value'), show='tree headings')
+        self.hw_tree.heading('Property', text='Property')
+        self.hw_tree.heading('Value', text='Value')
+        self.hw_tree.column('Property', width=150)
+        self.hw_tree.column('Value', width=250)
+        
+        # Add scrollbars
+        vsb = ttk.Scrollbar(self.hw_frame, orient="vertical", command=self.hw_tree.yview)
+        hsb = ttk.Scrollbar(self.hw_frame, orient="horizontal", command=self.hw_tree.xview)
+        self.hw_tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
+        
+        # Grid layout
+        self.hw_tree.grid(column=0, row=0, sticky='nsew')
+        vsb.grid(column=1, row=0, sticky='ns')
+        hsb.grid(column=0, row=1, sticky='ew')
+        
+        self.hw_frame.grid_columnconfigure(0, weight=1)
+        self.hw_frame.grid_rowconfigure(0, weight=1)
+
+    def create_monitoring_widgets(self):
+        # Frame for monitoring controls
+        control_frame = ttk.Frame(self.monitor_frame)
+        control_frame.pack(fill='x', pady=5)
+        
+        # CPU Usage
+        ttk.Label(self.monitor_frame, text="CPU Usage:").pack(pady=5)
+        self.cpu_frame = ttk.Frame(self.monitor_frame)
+        self.cpu_frame.pack(pady=5)
+        self.cpu_progress = ttk.Progressbar(self.cpu_frame, length=200, mode='determinate')
+        self.cpu_progress.pack(side='left', padx=5)
+        self.cpu_label = ttk.Label(self.cpu_frame, text="0%")
+        self.cpu_label.pack(side='left')
+
+        # Memory Usage
+        ttk.Label(self.monitor_frame, text="Memory Usage:").pack(pady=5)
+        self.mem_frame = ttk.Frame(self.monitor_frame)
+        self.mem_frame.pack(pady=5)
+        self.mem_progress = ttk.Progressbar(self.mem_frame, length=200, mode='determinate')
+        self.mem_progress.pack(side='left', padx=5)
+        self.mem_label = ttk.Label(self.mem_frame, text="0%")
+        self.mem_label.pack(side='left')
+
+        # Disk Usage
+        ttk.Label(self.monitor_frame, text="Disk Usage:").pack(pady=5)
+        self.disk_frame = ttk.Frame(self.monitor_frame)
+        self.disk_frame.pack(pady=5)
+        self.disk_progress = ttk.Progressbar(self.disk_frame, length=200, mode='determinate')
+        self.disk_progress.pack(side='left', padx=5)
+        self.disk_label = ttk.Label(self.disk_frame, text="0%")
+        self.disk_label.pack(side='left')
+
+    def handle_tab_change(self, event):
+        current_tab = self.notebook.select()
+        is_monitoring_tab = current_tab == str(self.monitor_frame)
+        
+        if is_monitoring_tab and not self.monitoring_active:
+            self.start_monitoring()
+        elif not is_monitoring_tab and self.monitoring_active:
+            self.stop_monitoring()
+
+    def start_monitoring(self):
+        self.monitoring_active = True
+        self.update_metrics()
+        print("Monitoring started")  # Debug line
+
+    def stop_monitoring(self):
+        self.monitoring_active = False
+        print("Monitoring stopped")  # Debug line
+
+    def update_metrics(self):
+        if not self.monitoring_active:
+            return
+            
+        metrics = self.sys_info.get_real_time_metrics()
+        
+        # Update CPU
+        self.cpu_progress['value'] = metrics['cpu_percent']
+        self.cpu_label.config(text=f"{metrics['cpu_percent']:.1f}%")
+        
+        # Update Memory
+        self.mem_progress['value'] = metrics['memory_usage']
+        self.mem_label.config(text=f"{metrics['memory_usage']:.1f}%")
+        
+        # Update Disk
+        self.disk_progress['value'] = metrics['disk_usage']
+        self.disk_label.config(text=f"{metrics['disk_usage']:.1f}%")
+        
+        if self.monitoring_active:
+            self.after(1000, self.update_metrics)
+
+    def update_info(self):
+        system_info = self.sys_info.get_system_info()
+        self.info_tree.delete(*self.info_tree.get_children())
+        for category, info in system_info.items():
+            category_id = self.info_tree.insert('', 'end', values=(category, ''))
+            for key, value in info.items():
+                self.info_tree.insert(category_id, 'end', values=(key, value))
+
+    def update_hardware_tree(self, hardware_info):
+        self.hw_tree.delete(*self.hw_tree.get_children())
+        for category, data in hardware_info.items():
+            parent = self.hw_tree.insert("", "end", text=category)
+            if isinstance(data, dict):
+                for key, value in data.items():
+                    if isinstance(value, dict):
+                        sub_parent = self.hw_tree.insert(parent, "end", text=key)
+                        for sub_key, sub_value in value.items():
+                            self.hw_tree.insert(sub_parent, "end", 
+                                              values=(sub_key, sub_value))
+                    else:
+                        self.hw_tree.insert(parent, "end", 
+                                          values=(key, value))
+                                            
 class NetworkScanFrame(ttk.Frame):
     def __init__(self, master, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
@@ -459,3 +574,237 @@ class ReportingFrame(ttk.Frame):
             path = self.report_list.item(selected[0])['values'][2]
             os.remove(path)
             self.report_list.delete(selected)
+
+def create_treeview(self, parent):
+    tree = ttk.Treeview(parent, columns=('Property', 'Value'), show='tree headings')
+    tree.heading('Property', text='Property')
+    tree.heading('Value', text='Value')
+    tree.column('Property', width=150)
+    tree.column('Value', width=250)
+    tree.pack(fill='both', expand=True)
+    
+    # Add scrollbars
+    vsb = ttk.Scrollbar(parent, orient="vertical", command=tree.yview)
+    hsb = ttk.Scrollbar(parent, orient="horizontal", command=tree.xview)
+    tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
+    
+    # Grid layout
+    tree.grid(column=0, row=0, sticky='nsew')
+    vsb.grid(column=1, row=0, sticky='ns')
+    hsb.grid(column=0, row=1, sticky='ew')
+    
+    parent.grid_columnconfigure(0, weight=1)
+    parent.grid_rowconfigure(0, weight=1)
+    
+    return tree
+
+def create_interface_widgets(self):
+    # Interface Selection
+    self.interface_frame = ttk.LabelFrame(self, text="Network Interfaces")
+    self.interface_frame.pack(fill='x', padx=5, pady=5)
+    
+    self.interface_var = tk.StringVar()
+    self.interface_combo = ttk.Combobox(
+        self.interface_frame, 
+        textvariable=self.interface_var,
+        values=self.network_monitor.get_network_interfaces()
+    )
+    self.interface_combo.pack(padx=5, pady=5)
+    self.interface_combo.bind('<<ComboboxSelected>>', self.update_interface_info)
+    
+    # Interface Details
+    self.details_notebook = ttk.Notebook(self)
+    self.details_notebook.pack(fill='both', expand=True, padx=5, pady=5)
+    
+    # Status Tab
+    self.status_frame = ttk.Frame(self.details_notebook)
+    self.details_notebook.add(self.status_frame, text="Status")
+    
+    # Configuration Tab
+    self.config_frame = ttk.Frame(self.details_notebook)
+    self.details_notebook.add(self.config_frame, text="Configuration")
+    
+    # Statistics Tab
+    self.stats_frame = ttk.Frame(self.details_notebook)
+    self.details_notebook.add(self.stats_frame, text="Statistics")
+    
+    # Traffic Graph
+    self.graph_frame = ttk.Frame(self.details_notebook)
+    self.details_notebook.add(self.graph_frame, text="Traffic")
+    self.create_traffic_graph()
+    
+    # Start monitoring
+    self.start_interface_monitoring()
+
+def create_traffic_graph(self):
+    self.figure = Figure(figsize=(6, 4), dpi=100)
+    self.plot = self.figure.add_subplot(111)
+    self.canvas = FigureCanvasTkAgg(self.figure, master=self.graph_frame)
+    self.canvas.draw()
+    self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+
+class NetworkMonitorFrame(ttk.Frame):
+    def __init__(self, master, *args, **kwargs):
+        super().__init__(master, *args, **kwargs)
+        self.network_monitor = NetworkInterfaceMonitor()
+        self.traffic_data = {'time': [], 'rx': [], 'tx': []}
+        self.create_widgets()
+        self.start_monitoring()
+
+    def create_widgets(self):
+        # Main container with tabs
+        self.notebook = ttk.Notebook(self)
+        self.notebook.pack(fill='both', expand=True, padx=5, pady=5)
+
+        # Interface Selection Panel
+        self.create_interface_panel()
+        
+        # Status Monitor Tab
+        self.status_frame = ttk.Frame(self.notebook)
+        self.create_status_widgets()
+        self.notebook.add(self.status_frame, text="Status")
+
+        # Statistics Tab
+        self.stats_frame = ttk.Frame(self.notebook)
+        self.create_statistics_widgets()
+        self.notebook.add(self.stats_frame, text="Statistics")
+
+        # Traffic Graph Tab
+        self.traffic_frame = ttk.Frame(self.notebook)
+        self.create_traffic_graph()
+        self.notebook.add(self.traffic_frame, text="Traffic")
+
+        # Active Connections Tab
+        self.connections_frame = ttk.Frame(self.notebook)
+        self.create_connections_widgets()
+        self.notebook.add(self.connections_frame, text="Connections")
+
+    def create_interface_panel(self):
+        panel = ttk.LabelFrame(self, text="Interface Selection")
+        panel.pack(fill='x', padx=5, pady=5)
+
+        self.interface_var = tk.StringVar()
+        interfaces = self.network_monitor.get_network_interfaces()
+        self.interface_combo = ttk.Combobox(
+            panel, 
+            textvariable=self.interface_var,
+            values=interfaces
+        )
+        self.interface_combo.pack(padx=5, pady=5)
+        self.interface_combo.bind('<<ComboboxSelected>>', self.on_interface_change)
+
+    def create_status_widgets(self):
+        # Interface Status
+        self.status_tree = ttk.Treeview(self.status_frame, columns=('Property', 'Value'), show='headings')
+        self.status_tree.heading('Property', text='Property')
+        self.status_tree.heading('Value', text='Value')
+        self.status_tree.pack(fill='both', expand=True, padx=5, pady=5)
+
+    def create_statistics_widgets(self):
+        # Network Statistics
+        self.stats_tree = ttk.Treeview(self.stats_frame, columns=('Metric', 'Value'), show='headings')
+        self.stats_tree.heading('Metric', text='Metric')
+        self.stats_tree.heading('Value', text='Value')
+        self.stats_tree.pack(fill='both', expand=True, padx=5, pady=5)
+
+    def create_traffic_graph(self):
+        self.figure = Figure(figsize=(6, 4), dpi=100)
+        self.plot = self.figure.add_subplot(111)
+        self.plot.set_title('Network Traffic')
+        self.plot.set_xlabel('Time')
+        self.plot.set_ylabel('Bytes/s')
+        
+        self.canvas = FigureCanvasTkAgg(self.figure, master=self.traffic_frame)
+        self.canvas.draw()
+        self.canvas.get_tk_widget().pack(fill='both', expand=True)
+
+    def create_connections_widgets(self):
+        # Active Connections
+        self.connections_tree = ttk.Treeview(
+            self.connections_frame, 
+            columns=('Local', 'Remote', 'Status', 'PID'),
+            show='headings'
+        )
+        self.connections_tree.heading('Local', text='Local Address')
+        self.connections_tree.heading('Remote', text='Remote Address')
+        self.connections_tree.heading('Status', text='Status')
+        self.connections_tree.heading('PID', text='PID')
+        self.connections_tree.pack(fill='both', expand=True, padx=5, pady=5)
+
+    def start_monitoring(self):
+        self.update_interface_info()
+        self.update_traffic_graph()
+        self.after(1000, self.start_monitoring)
+
+    def update_interface_info(self):
+        if self.interface_var.get():
+            interface = self.interface_var.get()
+            details = self.network_monitor.get_interface_details()[interface]
+            
+            # Update Status
+            self.status_tree.delete(*self.status_tree.get_children())
+            for key, value in details['status'].items():
+                self.status_tree.insert('', 'end', values=(key, value))
+            
+            # Update Statistics
+            self.stats_tree.delete(*self.stats_tree.get_children())
+            for key, value in details['statistics'].items():
+                self.stats_tree.insert('', 'end', values=(key, self.format_bytes(value)))
+            
+            # Update Connections
+            self.update_connections(interface)
+        
+    def on_interface_change(self, event):
+        """Handle interface selection change"""
+        selected_interface = self.interface_combo.get()
+        # Update network statistics for the selected interface
+        interface_stats = self.network_monitor.monitor_interfaces()
+        
+        # Update the interface display
+        self.update_interface_stats(interface_stats)
+        
+    def update_interface_stats(self, stats):
+        """Update the interface statistics display"""
+        if hasattr(self, 'stats_tree'):
+            self.stats_tree.delete(*self.stats_tree.get_children())
+            for interface, data in stats['interfaces'].items():
+                self.stats_tree.insert('', 'end', values=(interface, data))
+
+    def update_traffic_graph(self):
+        if self.interface_var.get():
+            interface = self.interface_var.get()
+            bandwidth = self.network_monitor.get_bandwidth_usage(interface)
+            
+            current_time = time.strftime('%H:%M:%S')
+            self.traffic_data['time'].append(current_time)
+            self.traffic_data['rx'].append(bandwidth['bytes_recv_per_sec'])
+            self.traffic_data['tx'].append(bandwidth['bytes_sent_per_sec'])
+            
+            # Keep last 60 seconds of data
+            if len(self.traffic_data['time']) > 60:
+                self.traffic_data['time'].pop(0)
+                self.traffic_data['rx'].pop(0)
+                self.traffic_data['tx'].pop(0)
+            
+            self.plot.clear()
+            self.plot.plot(self.traffic_data['rx'], label='RX')
+            self.plot.plot(self.traffic_data['tx'], label='TX')
+            self.plot.legend()
+            self.canvas.draw()
+
+    def update_connections(self, interface):
+        self.connections_tree.delete(*self.connections_tree.get_children())
+        connections = self.network_monitor.get_active_connections(interface)
+        for conn in connections:
+            self.connections_tree.insert('', 'end', values=(
+                conn['local_address'],
+                conn['remote_address'],
+                conn['status'],
+                conn['pid']
+            ))
+
+    def format_bytes(self, bytes):
+        for unit in ['B', 'KB', 'MB', 'GB']:
+            if bytes < 1024:
+                return f"{bytes:.2f} {unit}"
+            bytes /= 1024

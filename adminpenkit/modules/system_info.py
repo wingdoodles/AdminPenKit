@@ -3,14 +3,17 @@ import platform
 import os
 import socket
 from datetime import datetime
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
 from modules.base_module import BaseModule
 from core.performance import measure_execution_time
+
 class SystemInfoModule(BaseModule):
     def __init__(self):
         super().__init__()
         self.name = "System Information"
+        self._cache = {}
+        self.update_interval = 1000  # milliseconds
 
     def initialize(self):
         """Initialize the system information module"""
@@ -18,29 +21,36 @@ class SystemInfoModule(BaseModule):
 
     @measure_execution_time
     def execute(self):
-        tasks = {
-            "hardware": self.get_hardware_info,
-            "os": self.get_os_info,
-            "cpu": self.get_cpu_info,
-            "memory": self.get_memory_info
-        }
-        
-        with ThreadPoolExecutor(max_workers=4) as executor:
-            futures = {executor.submit(func): name for name, func in tasks.items()}
-            results = {}
-            for future in futures.as_completed(futures):
-                name = futures[future]
-                results[name] = future.result()
-        return results
+        return self.get_system_info()
 
     def cleanup(self):
         """Cleanup any resources"""
         return True
 
+    def get_system_info(self):
+        return {
+            'hardware': self.get_hardware_info(),
+            'os': self.get_os_info(),
+            'performance': self.get_real_time_metrics()
+        }
+
     @lru_cache(maxsize=32)
     def get_hardware_info(self):
-        # Hardware info implementation
-        return {"platform": platform.machine(), "processor": platform.processor()}
+        return {
+            'cpu': {
+                'cores': psutil.cpu_count(),
+                'physical_cores': psutil.cpu_count(logical=False),
+                'frequency': psutil.cpu_freq()._asdict() if psutil.cpu_freq() else {},
+                'stats': psutil.cpu_stats()._asdict()
+            },
+            'memory': {
+                'total': self.format_bytes(psutil.virtual_memory().total),
+                'available': self.format_bytes(psutil.virtual_memory().available),
+                'used': self.format_bytes(psutil.virtual_memory().used)
+            },
+            'disks': self.get_disk_info(),
+            'network': self.get_network_info()
+        }
 
     @lru_cache(maxsize=32)
     def get_os_info(self):
@@ -50,47 +60,44 @@ class SystemInfoModule(BaseModule):
             "version": platform.version()
         }
 
-    @lru_cache(maxsize=32)
-    def get_cpu_info(self):
+    def get_real_time_metrics(self):
         return {
-            "cpu_count": psutil.cpu_count(),
-            "cpu_freq": psutil.cpu_freq()._asdict() if psutil.cpu_freq() else {},
-            "cpu_percent": psutil.cpu_percent(interval=0.1)
+            'cpu_percent': psutil.cpu_percent(interval=1),
+            'memory_usage': psutil.virtual_memory().percent,
+            'disk_usage': psutil.disk_usage('/').percent,
+            'network_io': psutil.net_io_counters()._asdict(),
+            'swap_memory': psutil.swap_memory().percent
         }
-    def get_system_info(self):
-        return {
-            "OS": platform.system(),
-            "OS Version": platform.version(),
-            "Architecture": platform.machine(),
-            "Processor": platform.processor(),
-            "Hostname": socket.gethostname(),
-            "CPU Cores": psutil.cpu_count(),
-            "RAM Total": f"{round(psutil.virtual_memory().total / (1024.0 ** 3), 2)} GB",
-            "RAM Available": f"{round(psutil.virtual_memory().available / (1024.0 ** 3), 2)} GB",
-            "Disk Usage": self.get_disk_info()
-        }
-    
+
     def get_disk_info(self):
         disks = {}
         for partition in psutil.disk_partitions():
             try:
                 usage = psutil.disk_usage(partition.mountpoint)
-                disks[partition.mountpoint] = {
-                    "Total": f"{usage.total / (1024.0 ** 3):.2f} GB",
-                    "Used": f"{usage.used / (1024.0 ** 3):.2f} GB",
-                    "Free": f"{usage.free / (1024.0 ** 3):.2f} GB"
+                disks[partition.device] = {
+                    'mountpoint': partition.mountpoint,
+                    'filesystem': partition.fstype,
+                    'total': self.format_bytes(usage.total),
+                    'used': self.format_bytes(usage.used),
+                    'free': self.format_bytes(usage.free),
+                    'percent': usage.percent
                 }
-            except:
+            except Exception:
                 continue
         return disks
 
-    @lru_cache(maxsize=32)
-    def get_memory_info(self):
-        mem = psutil.virtual_memory()
-        return {
-            "total": mem.total,
-            "available": mem.available,
-            "percent": mem.percent,
-            "used": mem.used,
-            "free": mem.free
-        }
+    def get_network_info(self):
+        interfaces = {}
+        for name, stats in psutil.net_if_stats().items():
+            interfaces[name] = {
+                'status': 'Up' if stats.isup else 'Down',
+                'speed': f"{stats.speed}Mb/s",
+                'mtu': stats.mtu
+            }
+        return interfaces
+
+    def format_bytes(self, bytes):
+        for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+            if bytes < 1024:
+                return f"{bytes:.2f}{unit}"
+            bytes /= 1024
