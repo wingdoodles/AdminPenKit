@@ -13,7 +13,7 @@ A powerful GUI-based toolkit for system administrators and security professional
 ### Windows
 1. Install Python 3.8 or higher from python.org
 2. Clone the repository:
-   git clone https://github.com/yourusername/adminpenkit.git
+   git clone https://github.com/wingdoodles/adminpenkit.git
    cd adminpenkit
 3. Install dependencies:
    pip install -r requirements/requirements_windows.txt
@@ -31,7 +31,7 @@ A powerful GUI-based toolkit for system administrators and security professional
    sudo pacman -S python python-pip tk
 
 2. Clone the repository:
-   git clone https://github.com/yourusername/adminpenkit.git
+   git clone https://github.com/wingdoodles/adminpenkit.git
    cd adminpenkit
 
 3. Install Python dependencies:
@@ -45,7 +45,7 @@ A powerful GUI-based toolkit for system administrators and security professional
    brew install python python-tk
 
 3. Clone the repository:
-   git clone https://github.com/yourusername/adminpenkit.git
+   git clone https://github.com/wingdoodles/adminpenkit.git
    cd adminpenkit
 
 4. Install Python dependencies:
