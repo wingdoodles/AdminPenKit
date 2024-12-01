@@ -10,7 +10,7 @@ from modules.network_scanner import NetworkScanner
 from modules.service_manager import ServiceManager
 from modules.security_checker import SecurityChecker
 from modules.data_viz import DataVisualizer
-from modules.security_audit import SecurityAuditor
+from modules.security_audit import SecurityAudit
 from modules.reporting import ReportGenerator
 from modules.network_scanner import NetworkInterfaceMonitor
 
@@ -332,7 +332,7 @@ class DataVisualizationFrame(ttk.Frame):
 class SecurityAuditFrame(ttk.Frame):
     def __init__(self, master, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
-        self.auditor = SecurityAuditor()
+        self.auditor = SecurityAudit()
         self.create_widgets()
 
     def create_widgets(self):
@@ -678,6 +678,21 @@ class NetworkMonitorFrame(ttk.Frame):
         self.connections_frame = ttk.Frame(self.notebook)
         self.create_connections_widgets()
         self.notebook.add(self.connections_frame, text="Connections")
+
+    def create_visualization_panel(self):
+        self.fig = Figure(figsize=(6, 4))
+        
+        # Traffic Overview
+        self.traffic_ax = self.fig.add_subplot(211)
+        self.traffic_ax.set_title('Network Traffic')
+        
+        # Protocol Distribution
+        self.protocol_ax = self.fig.add_subplot(212)
+        self.protocol_ax.set_title('Protocol Distribution')
+        
+        self.canvas = FigureCanvasTkAgg(self.fig, master=self)
+        self.canvas.draw()
+        self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
     def create_interface_panel(self):
         panel = ttk.LabelFrame(self, text="Interface Selection")

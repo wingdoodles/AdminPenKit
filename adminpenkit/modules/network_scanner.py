@@ -7,6 +7,7 @@ import time
 import psutil
 import time
 import netifaces
+from collections import defaultdict, Counter
 from scapy.all import sniff
 from collections import deque
 from adminpenkit.modules.base_module import BaseModule
@@ -126,9 +127,26 @@ class NetworkInterfaceMonitor:
         self._lock = threading.Lock()
         self._capture_thread = None
         self._running = False
-        self._last_bytes = {}
-        self._last_check = time.time()
+        self._traffic_stats = defaultdict(lambda: {'bytes': 0, 'packets': 0})
         
+    def analyze_traffic_patterns(self):
+        """Analyze traffic patterns and protocols"""
+        with self._lock:
+            patterns = {
+                'protocols': Counter(pkt['protocol'] for pkt in self._packet_buffer),
+                'connections': self._analyze_connections(),
+                'bandwidth': self._calculate_bandwidth()
+            }
+        return patterns
+        
+    def get_network_topology(self):
+        """Map network topology based on captured traffic"""
+        topology = {
+            'nodes': self._identify_nodes(),
+            'connections': self._map_connections(),
+            'traffic_flows': self._analyze_flows()
+        }
+        return topology        
     def get_network_interfaces(self):
         """Direct method to get network interfaces"""
         return self.scanner.get_network_interfaces()
