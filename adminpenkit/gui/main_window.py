@@ -3,9 +3,9 @@ from tkinter import ttk
 from utils.logger import Logger
 from utils.config import Config
 from gui.tool_frames import (
-    SystemInfoFrame, 
-    NetworkScanFrame, 
-    ServiceManagerFrame, 
+    SystemInfoFrame,
+    NetworkScanFrame,
+    ServiceManagerFrame,
     SecurityCheckerFrame
 )
 
@@ -21,13 +21,12 @@ class MainWindow:
         self.create_sidebar()
         self.create_main_content()
         self.create_status_bar()
-        
+
     def setup_window(self):
         self.root.configure(bg='#f0f0f0')
-        # Make the window responsive
         self.root.grid_rowconfigure(0, weight=1)
         self.root.grid_columnconfigure(1, weight=1)
-        
+
     def create_menu(self):
         menubar = tk.Menu(self.root)
         
@@ -53,23 +52,41 @@ class MainWindow:
         menubar.add_cascade(label="Help", menu=help_menu)
         
         self.root.config(menu=menubar)
-        
+
     def create_sidebar(self):
         sidebar = ttk.Frame(self.root, relief='raised')
         sidebar.grid(row=0, column=0, sticky="nsew", padx=2, pady=2)
         
-        # Tool buttons
-        ttk.Button(sidebar, text="Network Tools").pack(pady=5, padx=5, fill=tk.X)
-        ttk.Button(sidebar, text="System Info").pack(pady=5, padx=5, fill=tk.X)
-        ttk.Button(sidebar, text="Security Scan").pack(pady=5, padx=5, fill=tk.X)
-        ttk.Button(sidebar, text="Services").pack(pady=5, padx=5, fill=tk.X)
+        # Tool buttons with commands
+        ttk.Button(
+            sidebar, 
+            text="Network Tools",
+            command=lambda: self.notebook.select(self.network_scan_frame)
+        ).pack(pady=5, padx=5, fill=tk.X)
         
+        ttk.Button(
+            sidebar, 
+            text="System Info",
+            command=lambda: self.notebook.select(self.sys_info_frame)
+        ).pack(pady=5, padx=5, fill=tk.X)
+        
+        ttk.Button(
+            sidebar, 
+            text="Security Scan",
+            command=lambda: self.notebook.select(self.security_frame)
+        ).pack(pady=5, padx=5, fill=tk.X)
+        
+        ttk.Button(
+            sidebar, 
+            text="Services",
+            command=lambda: self.notebook.select(self.service_frame)
+        ).pack(pady=5, padx=5, fill=tk.X)
+
     def create_main_content(self):
         self.main_content = ttk.Frame(self.root)
         self.main_content.grid(row=0, column=1, sticky="nsew", padx=2, pady=2)
-        
         self.create_tool_frames()
-        
+
     def create_tool_frames(self):
         self.notebook = ttk.Notebook(self.main_content)
         self.notebook.pack(expand=True, fill="both")
@@ -77,7 +94,7 @@ class MainWindow:
         # Welcome frame
         self.welcome_frame = ttk.Frame(self.notebook)
         welcome_label = ttk.Label(
-            self.welcome_frame, 
+            self.welcome_frame,
             text="Welcome to AdminPenKit\nSelect a tool from the sidebar to begin",
             justify=tk.CENTER
         )
@@ -95,24 +112,22 @@ class MainWindow:
         self.notebook.add(self.service_frame, text="Services")
         self.notebook.add(self.security_frame, text="Security")
         
-        # Set welcome tab as default
-        self.notebook.select(0)    
-        
+        self.notebook.select(0)
+
     def create_status_bar(self):
         self.status_bar = ttk.Frame(self.root)
         self.status_bar.grid(row=1, column=0, columnspan=2, sticky="ew")
         
         self.status_label = ttk.Label(
-            self.status_bar, 
+            self.status_bar,
             text="Ready",
             padding=(5, 2)
         )
         self.status_label.pack(side=tk.LEFT)
         
-        # Add version info to right side
         version_label = ttk.Label(
             self.status_bar,
             text="AdminPenKit v1.0.0",
             padding=(5, 2)
         )
-        version_label.pack(side=tk.RIGHT)        
+        version_label.pack(side=tk.RIGHT)

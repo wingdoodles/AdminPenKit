@@ -1,0 +1,29 @@
+AdminPenKit Utilities API Reference
+================================
+
+Helper Functions
+--------------
+convert_size(bytes: int) -> str
+    Converts bytes to human-readable format
+    
+format_time(seconds: float) -> str
+    Formats seconds into readable duration
+
+Common Utilities
+--------------
+class NetworkUtils:
+    get_local_ip() -> str
+    validate_ip(ip: str) -> bool
+    ping_host(host: str) -> bool
+
+class SystemUtils:
+    get_process_list() -> list
+    check_permissions(path: str) -> bool
+    validate_path(path: str) -> bool
+
+Data Structures
+-------------
+class ResultsCache:
+    store(key: str, data: dict)
+    retrieve(key: str) -> dict
+    clear()

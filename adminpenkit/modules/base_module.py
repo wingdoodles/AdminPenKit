@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
-from adminpenkit.utils.error_handler import handle_errors
-from adminpenkit.utils.performance import measure_performance
+from utils.error_handler import handle_errors
+from utils.performance import measure_performance
 class BaseModule(ABC):
     def __init__(self):
         self.name = self.__class__.__name__

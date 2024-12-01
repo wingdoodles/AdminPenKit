@@ -1,0 +1,32 @@
+AdminPenKit Core API Reference
+=============================
+
+BaseModule Interface
+------------------
+class BaseModule:
+    Methods:
+        execute() -> dict
+            Runs the module's main functionality
+            Returns: Dictionary of results
+
+        get_name() -> str
+            Returns the module name
+
+Performance Monitoring
+--------------------
+@measure_execution_time
+    Decorator for tracking method execution time
+    Usage: @measure_execution_time above any method
+
+Logging System
+-------------
+class Logger:
+    Methods:
+        log_info(message: str)
+            Logs informational messages
+        
+        log_error(message: str)
+            Logs error messages
+        
+        log_warning(message: str)
+            Logs warning messages

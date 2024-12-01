@@ -1,0 +1,31 @@
+AdminPenKit Interfaces API Reference
+=================================
+
+GUI Components
+------------
+class MainWindow:
+    Methods:
+        show_system_info()
+        show_network_scan()
+        show_security_audit()
+        refresh_display()
+
+CLI Interface
+-----------
+Commands:
+    adminpenkit scan [options]
+    adminpenkit audit [target]
+    adminpenkit info [component]
+
+API Endpoints
+-----------
+/api/v1/system
+    GET: Retrieve system information
+    
+/api/v1/network
+    GET: Network scan results
+    POST: Start new scan
+    
+/api/v1/security
+    GET: Security audit results
+    POST: Start new audit

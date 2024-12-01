@@ -1,0 +1,41 @@
+AdminPenKit Modules API Reference
+===============================
+
+SystemInfoModule
+--------------
+Methods:
+    get_hardware_info() -> dict
+        Returns system hardware information
+    
+    get_os_info() -> dict
+        Returns operating system details
+    
+    get_cpu_info() -> dict
+        Returns CPU statistics
+    
+    get_memory_info() -> dict
+        Returns memory usage data
+
+NetworkScanner
+------------
+Methods:
+    scan_network() -> dict
+        Returns network mapping data
+    
+    get_active_hosts() -> list
+        Returns list of active hosts
+    
+    scan_common_ports() -> dict
+        Returns open ports and services
+
+SecurityAuditor
+-------------
+Methods:
+    quick_system_check() -> dict
+        Returns basic system security status
+    
+    quick_network_check() -> dict
+        Returns network security status
+    
+    quick_user_check() -> dict
+        Returns user account security info
