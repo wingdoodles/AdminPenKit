@@ -6,6 +6,8 @@ from modules.service_manager import ServiceManager
 from modules.security_checker import SecurityChecker
 from modules.data_viz import DataVisualizer
 from modules.security_audit import SecurityAuditor
+from modules.reporting import ReportGenerator
+
 
 
 class SystemInfoFrame(ttk.Frame):
@@ -41,7 +43,6 @@ class NetworkScanFrame(ttk.Frame):
         super().__init__(master, *args, **kwargs)
         self.scanner = NetworkScanner()
         self.create_widgets()
-        
     def create_widgets(self):
         # Input frame
         input_frame = ttk.Frame(self)
@@ -51,7 +52,12 @@ class NetworkScanFrame(ttk.Frame):
         self.ip_entry = ttk.Entry(input_frame)
         self.ip_entry.pack(side="left", padx=5)
         
-        ttk.Button(input_frame, text="Scan", command=self.start_scan).pack(side="left")
+        self.scan_button = ttk.Button(input_frame, text="Scan", command=self.start_scan)
+        self.scan_button.pack(side="left")
+        
+        # Status label
+        self.status_label = ttk.Label(self, text="Ready")
+        self.status_label.pack(fill="x", padx=5)
         
         # Results frame
         self.results_tree = ttk.Treeview(self, columns=("IP", "Hostname", "State"))
@@ -59,7 +65,6 @@ class NetworkScanFrame(ttk.Frame):
         self.results_tree.heading("Hostname", text="Hostname")
         self.results_tree.heading("State", text="State")
         self.results_tree.pack(expand=True, fill="both", padx=5, pady=5)
-        
     def start_scan(self):
         target_ip = self.ip_entry.get()
         if target_ip:
@@ -197,3 +202,39 @@ class SecurityAuditFrame(ttk.Frame):
     def run_audit(self):
         results = self.auditor.run_full_audit()
         self.display_results(results)
+
+class ReportingFrame(ttk.Frame):
+    def __init__(self, master, *args, **kwargs):
+        super().__init__(master, *args, **kwargs)
+        self.report_gen = ReportGenerator()
+        self.create_widgets()
+        
+    def create_widgets(self):
+        # Report Configuration
+        config_frame = ttk.LabelFrame(self, text="Report Configuration")
+        config_frame.pack(fill="x", padx=5, pady=5)
+        
+        # Report Type Selection
+        ttk.Label(config_frame, text="Report Type:").pack(side="left", padx=5)
+        self.report_type = tk.StringVar(value="pdf")
+        ttk.Radiobutton(config_frame, text="PDF", variable=self.report_type, 
+                       value="pdf").pack(side="left")
+        ttk.Radiobutton(config_frame, text="JSON", variable=self.report_type, 
+                       value="json").pack(side="left")
+        ttk.Radiobutton(config_frame, text="CSV", variable=self.report_type, 
+                       value="csv").pack(side="left")
+        
+        # Generate Button
+        ttk.Button(self, text="Generate Report", 
+                  command=self.generate_report).pack(pady=10)
+        
+        # Report List
+        list_frame = ttk.LabelFrame(self, text="Generated Reports")
+        list_frame.pack(fill="both", expand=True, padx=5, pady=5)
+        
+        self.report_list = ttk.Treeview(list_frame, 
+                                      columns=("Date", "Type", "Path"))
+        self.report_list.heading("Date", text="Date")
+        self.report_list.heading("Type", text="Type")
+        self.report_list.heading("Path", text="File Path")
+        self.report_list.pack(fill="both", expand=True)
