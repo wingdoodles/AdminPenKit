@@ -4,6 +4,8 @@ from modules.system_info import SystemInfoModule
 from modules.network_scanner import NetworkScanner
 from modules.service_manager import ServiceManager
 from modules.security_checker import SecurityChecker
+from modules.data_viz import DataVisualizer
+from modules.security_audit import SecurityAuditor
 
 
 class SystemInfoFrame(ttk.Frame):
@@ -144,3 +146,54 @@ class SecurityCheckerFrame(ttk.Frame):
         for category, data in results.items():
             self.results_text.insert(tk.END, f"{category.upper()}:\n")
             self.results_text.insert(tk.END, f"{data}\n\n")
+
+class DataVisualizationFrame(ttk.Frame):
+    def __init__(self, master, *args, **kwargs):
+        super().__init__(master, *args, **kwargs)
+        self.visualizer = DataVisualizer()
+        self.create_widgets()
+        
+    def create_widgets(self):
+        control_frame = ttk.Frame(self)
+        control_frame.pack(fill="x", padx=5, pady=5)
+        
+        ttk.Button(control_frame, text="System Usage", 
+                  command=self.show_system_usage).pack(side="left", padx=5)
+        ttk.Button(control_frame, text="Network Traffic", 
+                  command=self.show_network_traffic).pack(side="left", padx=5)
+        
+        self.chart_frame = ttk.Frame(self)
+        self.chart_frame.pack(expand=True, fill="both", padx=5, pady=5)
+
+class SecurityAuditFrame(ttk.Frame):
+    def __init__(self, master, *args, **kwargs):
+        super().__init__(master, *args, **kwargs)
+        self.auditor = SecurityAuditor()
+        self.create_widgets()
+        
+    def create_widgets(self):
+        # Control Panel
+        control_frame = ttk.Frame(self)
+        control_frame.pack(fill="x", padx=5, pady=5)
+        
+        ttk.Button(control_frame, text="Run Full Audit", 
+                  command=self.run_audit).pack(side="left", padx=5)
+        
+        # Results Display
+        self.notebook = ttk.Notebook(self)
+        self.notebook.pack(expand=True, fill="both", padx=5, pady=5)
+        
+        # Create tabs for different audit categories
+        self.system_frame = ttk.Frame(self.notebook)
+        self.network_frame = ttk.Frame(self.notebook)
+        self.user_frame = ttk.Frame(self.notebook)
+        self.file_frame = ttk.Frame(self.notebook)
+        
+        self.notebook.add(self.system_frame, text="System Security")
+        self.notebook.add(self.network_frame, text="Network Security")
+        self.notebook.add(self.user_frame, text="User Security")
+        self.notebook.add(self.file_frame, text="File Security")
+        
+    def run_audit(self):
+        results = self.auditor.run_full_audit()
+        self.display_results(results)
