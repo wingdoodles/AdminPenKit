@@ -207,39 +207,40 @@ class NetworkScanFrame(ttk.Frame):
                 host["hostname"],
                 host["state"]
             ))
-
 class ServiceManagerFrame(ttk.Frame):
-    def __init__(self, master, *args, **kwargs):
-        super().__init__(master, *args, **kwargs)
-        self.service_mgr = ServiceManager()
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.service_manager = ServiceManager()
         self.create_widgets()
-        
+
     def create_widgets(self):
-        # Controls
-        control_frame = ttk.Frame(self)
-        control_frame.pack(fill="x", padx=5, pady=5)
-        
-        ttk.Button(control_frame, text="Refresh", command=self.refresh_services).pack(side="left", padx=5)
-        
         # Service list
-        self.tree = ttk.Treeview(self, columns=("Name", "Status", "Description"))
-        self.tree.heading("Name", text="Service Name")
-        self.tree.heading("Status", text="Status")
-        self.tree.heading("Description", text="Description")
-        self.tree.pack(expand=True, fill="both", padx=5, pady=5)
+        self.service_tree = ttk.Treeview(self, columns=('Name', 'Status', 'Type'), show='headings')
+        self.service_tree.heading('Name', text='Service Name')
+        self.service_tree.heading('Status', text='Status')
+        self.service_tree.heading('Type', text='Start Type')
         
-        self.refresh_services()
+        # Control buttons
+        self.button_frame = ttk.Frame(self)
+        self.start_btn = ttk.Button(self.button_frame, text='Start', command=self.start_selected_service)
+        self.stop_btn = ttk.Button(self.button_frame, text='Stop', command=self.stop_selected_service)
+        self.config_btn = ttk.Button(self.button_frame, text='Configure', command=self.show_config_dialog)
         
+        # Layout
+        self.service_tree.pack(fill='both', expand=True)
+        self.button_frame.pack(fill='x')
+        self.start_btn.pack(side='left', padx=5)
+        self.stop_btn.pack(side='left', padx=5)
+        self.config_btn.pack(side='left', padx=5)
+
     def refresh_services(self):
-        for item in self.tree.get_children():
-            self.tree.delete(item)
-            
-        services = self.service_mgr.list_services()
+        self.service_tree.delete(*self.service_tree.get_children())
+        services = self.service_manager.list_services()
         for service in services:
-            self.tree.insert("", "end", values=(
-                service.get("name", ""),
-                service.get("status", ""),
-                service.get("description", "")
+            self.service_tree.insert('', 'end', values=(
+                service['name'],
+                service['status'],
+                service.get('start_type', 'N/A')
             ))
 
 class SecurityCheckerFrame(ttk.Frame):

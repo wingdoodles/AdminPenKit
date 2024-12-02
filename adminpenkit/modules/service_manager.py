@@ -54,3 +54,59 @@ class ServiceManager(BaseModule):
             return service.status()
         except Exception as e:
             raise Exception(f"Failed to get service status: {str(e)}")
+
+def start_service(self, service_name):
+    if self.os_type == 'windows':
+        try:
+            service = psutil.win_service_get(service_name)
+            return service.start()
+        except Exception as e:
+            raise Exception(f"Failed to start service: {str(e)}")
+    else:
+        subprocess.run(['systemctl', 'start', service_name])
+        return True
+
+def stop_service(self, service_name):
+    if self.os_type == 'windows':
+        try:
+            service = psutil.win_service_get(service_name)
+            return service.stop()
+        except Exception as e:
+            raise Exception(f"Failed to stop service: {str(e)}")
+    else:
+        subprocess.run(['systemctl', 'stop', service_name])
+        return True
+
+def get_service_config(self, service_name):
+    if self.os_type == 'windows':
+        service = psutil.win_service_get(service_name)
+        config = service.as_dict()
+        return {
+            'start_type': config['start_type'],
+            'binpath': config['binpath'],
+            'username': config['username'],
+            'display_name': config['display_name']
+        }
+    else:
+        output = subprocess.check_output(['systemctl', 'show', service_name])
+        config = {}
+        for line in output.decode().split('\n'):
+            if '=' in line:
+                key, value = line.split('=', 1)
+                config[key] = value
+        return config
+
+def set_service_config(self, service_name, config_dict):
+    if self.os_type == 'windows':
+        # Windows service configuration
+        cmd = ['sc', 'config', service_name]
+        for key, value in config_dict.items():
+            cmd.extend([key, value])
+        subprocess.run(cmd)
+    else:
+        # Linux service configuration
+        service_file = f"/etc/systemd/system/{service_name}.service"
+        with open(service_file, 'w') as f:
+            for key, value in config_dict.items():
+                f.write(f"{key}={value}\n")
+        subprocess.run(['systemctl', 'daemon-reload'])
